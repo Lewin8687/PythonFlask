@@ -20,9 +20,9 @@ def get_model():
 
   print("Model loaded!")
 
-#@app.route('/')
-#def hello_world():
-#  return 'Hey its Python Flask application!'
+@app.route('/')
+def hello_world():
+  return 'Hey its Python Flask application!'
 
 print("Loading model...")
 get_model()
