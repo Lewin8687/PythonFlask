@@ -1,7 +1,9 @@
+import json
 import tensorflow as tf 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.models import model_from_json
 from flask import request
+from flask import Response
 from flask import jsonify
 from flask import Flask
 from numpy import array
@@ -87,9 +89,46 @@ def predictReview():
   prediction = model.predict_classes([data])
 
   if prediction[0][0] == 0:
+    print("*********Bad review..")
     return "Bad review.."
 
+  print("*********Good review!")
   return "Good review!"
+
+@app.route('/getSamples', methods=["GET"])
+def getSamples():
+  count = str(request.args.get('count'))
+  print("*******Getting " + count + " samples")
+
+  result = []
+  model = get_model()
+  (train_data, train_labels), (test_data, test_labels) = imdb.load_data(num_words=10000)
+
+  for i in range(0, int(count)):
+    item = {}
+    original = decode_review(train_data[i])
+    train_data[i] = tf.keras.preprocessing.sequence.pad_sequences([train_data[i]],
+                                                    value=word_index["<PAD>"],
+                                                    padding='post',
+                                                    maxlen=256)[0]
+
+    score = model.predict([[train_data[i]]])[0][0]
+
+    if model.predict_classes([[train_data[i]]])[0][0] == 0:
+      prediction = "Negative"
+    else:
+      prediction = "Positive"
+
+    if prediction == "Negative":
+      score = 1 - score
+
+    item['Review'] = original
+    item['Prediction'] = prediction
+    item['Probability'] = str(score)
+    result.append(item)
+
+  return jsonify(result)
+  #return Response(json.dumps(result),  mimetype='application/json')
 
 if __name__ == '__main__':
   app.run()
