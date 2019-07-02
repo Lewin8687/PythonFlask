@@ -86,14 +86,21 @@ def predictReview():
 
   # Get model
   model = get_model()
-  prediction = model.predict_classes([data])
+  if model.predict_classes([data])[0][0] == 0:
+    prediction = "Negative"
+  else:
+    prediction = "Positive"
+    score = model.predict([data])[0][0]
 
-  if prediction[0][0] == 0:
-    print("*********Bad review..")
-    return "Bad review.."
+  item = {}
+  if prediction == "Negative":
+    score = 1 - score
 
-  print("*********Good review!")
-  return "Good review!"
+  item['Review'] = review
+  item['Prediction'] = prediction
+  item['Score'] = str(score)
+  
+  return jsonify(item)
 
 @app.route('/getSamples', methods=["GET"])
 def getSamples():
