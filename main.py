@@ -1,3 +1,8 @@
+"""
+Routes for the flask application.
+"""
+
+import os
 import json
 import tensorflow as tf 
 from tensorflow.keras.models import Sequential
@@ -6,14 +11,15 @@ from flask import request
 from flask import Response
 from flask import jsonify
 from flask import Flask
+from flask import render_template
 from numpy import array
 
-app = Flask(__name__)
+from DocumentMLClassifier import app
 
 imdb = tf.keras.datasets.imdb
 # A dictionary mapping words to an integer index
 word_index = imdb.get_word_index()
-#graph = tf.get_default_graph()
+script_dir = os.path.dirname(__file__)
 
 # The first indices are reserved
 word_index = {k:(v+3) for k,v in word_index.items()} 
@@ -26,12 +32,12 @@ reverse_word_index = dict([(value, key) for (key, value) in word_index.items()])
 
 def get_model():
   # Model reconstruction from JSON file
-  json_file = open('model_architecture.json','r')
+  json_file = open(os.path.join(script_dir, 'model/model_architecture.json'),'r')
   loaded_model_json = json_file.read()
   json_file.close()
   model = model_from_json(loaded_model_json)
   # Load weights into new model
-  model.load_weights("model_weights.h5")
+  model.load_weights(os.path.join(script_dir, "model/model_weights.h5"))
 
   print("********Model loaded!")
   return model
@@ -104,14 +110,15 @@ def predictReview():
 
 @app.route('/getSamples', methods=["GET"])
 def getSamples():
-  count = str(request.args.get('count'))
-  print("*******Getting " + count + " samples")
+  start = str(request.args.get('start'))
+  end = str(request.args.get('end'))
+  print("*******Getting samples from " + start + " to " + end)
 
   result = []
   model = get_model()
   (train_data, train_labels), (test_data, test_labels) = imdb.load_data(num_words=10000)
 
-  for i in range(0, int(count)):
+  for i in range(int(start), int(end)):
     item = {}
     original = decode_review(train_data[i])
     train_data[i] = tf.keras.preprocessing.sequence.pad_sequences([train_data[i]],
@@ -134,8 +141,15 @@ def getSamples():
     item['Probability'] = str(score)
     result.append(item)
 
-  return jsonify(result)
-  #return Response(json.dumps(result),  mimetype='application/json')
+  html = """\
+  <table border='1'>
+  <tr><th>Review</th><th>Prediction</th><th>Probability</th></tr>"""
 
-if __name__ == '__main__':
-  app.run()
+  for row in result:
+    html = html + "<tr><td>" + row['Review'] + "</td><td>" + row['Prediction'] + "</td><td>" + row['Probability'] + "</td></tr>"
+  html = html + "</table>"
+
+  return render_template(
+    'result.html',
+    results = html
+  )
