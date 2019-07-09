@@ -99,7 +99,7 @@ def predictReview():
 
   item['Review'] = review
   item['Prediction'] = prediction
-  item['Score'] = str(score)
+  item['Probability'] = str(score)
 
   html = """\
   <table border='1'>
@@ -114,7 +114,7 @@ def predictReview():
     results = html
   )
 
-@app.route('/getSamples', methods=["GET"])
+@app.route('/getsamples', methods=["GET"])
 def getSamples():
   start = str(request.args.get('start'))
   end = str(request.args.get('end'))
