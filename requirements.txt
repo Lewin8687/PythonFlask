@@ -1,5 +1,5 @@
 wheel==0.33.4
 Flask==1.0.3
 Keras==2.2.4
-numpy==1.16.1
+numpy==1.22.0
 tensorflow
